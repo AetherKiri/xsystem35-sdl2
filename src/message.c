@@ -285,6 +285,7 @@ void msg_hitAnyKey() {
 	const char *prompt[CHARACTER_ENCODING_MAX + 1] = {
 		[SHIFT_JIS] = "\x81\xa5",
 		[UTF8] = "▼",
+		[GBK] = "\xa8\x8b",
 	};
 	
 	SDL_Rect r;

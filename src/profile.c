@@ -175,3 +175,11 @@ bool get_boolean_profile(const char *name, bool *out) {
 	WARNING("invalid profile value for %s: \"%s\"\n", name, value);
 	return false;
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void profile_clear(void) {
+ for (int i=0; i<profile_values; i++) { free(profile[i].name); free(profile[i].value); }
+ free(profile); profile=NULL; profile_values=0;
+}
+#endif

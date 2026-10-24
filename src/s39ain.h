@@ -51,6 +51,7 @@ typedef struct {
 
 /* System39.ain 全体の情報 */
 typedef struct {
+	char *backing; /* Owned decoded AIN data. */
 	int   dllnum; /* DLL  の数 */
 	int   fncnum; /* FUNC の数 */
 	int   varnum; /* VARI の数 */

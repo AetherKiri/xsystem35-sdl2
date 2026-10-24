@@ -429,3 +429,13 @@ EM_ASYNC_JS(bool, load_mincho_font, (void), {
 	return await xsystem35.load_mincho_font();
 });
 #endif
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void font_remove(void) {
+ cache_destroy(glyph_cache); glyph_cache=NULL;
+ for(int i=0; i<FONTTYPEMAX; i++) if(this.face[i]) FT_Done_Face(this.face[i]);
+ memset(&this, 0, sizeof(this));
+ if(ft_library) FT_Done_FreeType(ft_library); ft_library=NULL;
+}
+#endif

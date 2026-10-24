@@ -2146,7 +2146,11 @@ static void XMenuTitleGet() {
 	TRACE("SACT.XMenuTitleGet %d:", strno);
 }
 
+extern void sblog_remove(void);
+extern void smask_remove(void);
+
 static void SACT_reset(void) {
+	if (!sact.sp[0]) return;
 	ssnd_init();
 	spxm_clear();
 	ssel_reset();
@@ -2154,6 +2158,14 @@ static void SACT_reset(void) {
 	sp_reset();
 
 	scg_freeall();
+    for (int i=0; i<SPRITEMAX; i++) free(sact.sp[i]);
+    slist_free(sact.updatelist);
+    slist_free(sact.movelist);
+    slist_free(sact.eventlisteners);
+    slist_free(sact.teventlisteners);
+    slist_free(sact.teventremovelist);
+    sblog_remove();
+    smask_remove();
 	SDL_DestroySurface(sact.dmap);
 	memset(&sact, 0, sizeof(sact));
 }

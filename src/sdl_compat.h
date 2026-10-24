@@ -550,7 +550,11 @@ static inline Uint64 sdl_TimestampToTicks(Uint64 timestamp) {
 }
 
 static inline bool sdl_StartTextInput(SDL_Window *window) {
-#if XSYSTEM35_SDL_VERSION == 2
+#ifdef XSYSTEM35_EMBEDDED
+	(void)window;
+	xsystem35_host_text_input(1);
+	return true;
+#elif XSYSTEM35_SDL_VERSION == 2
 	(void)window;
 	SDL_StartTextInput();
 	return true;
@@ -560,7 +564,11 @@ static inline bool sdl_StartTextInput(SDL_Window *window) {
 }
 
 static inline bool sdl_StopTextInput(SDL_Window *window) {
-#if XSYSTEM35_SDL_VERSION == 2
+#ifdef XSYSTEM35_EMBEDDED
+	(void)window;
+	xsystem35_host_text_input(0);
+	return true;
+#elif XSYSTEM35_SDL_VERSION == 2
 	(void)window;
 	SDL_StopTextInput();
 	return true;

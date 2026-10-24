@@ -227,6 +227,8 @@ void menu_resetmenu_open(void) {
 // On Windows, menu_open/menu_init/menu_setSkipState are provided by win/menubar.c.
 #ifndef _WIN32
 void menu_init(void) {
+	skip_enabled=true;
+	skip_activated=false;
 }
 
 void menu_setSkipState(bool enabled, bool activated) {

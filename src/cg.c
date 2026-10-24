@@ -752,3 +752,8 @@ void load_censor_list(const char *path) {
 		censor_list = NULL;
 	}
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void cg_remove(void) { cache_destroy(cg_cache); cg_cache=NULL; cg_reset(); }
+#endif

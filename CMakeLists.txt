@@ -7,6 +7,8 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS TRUE)
 
 set(XSYSTEM35_VERSION "2.20.0")
 
+find_package(Iconv REQUIRED)
+
 include(CheckSymbolExists)
 include(FetchContent)
 

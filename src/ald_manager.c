@@ -152,3 +152,15 @@ int ald_get_maxno(DRIFILETYPE type) {
 CacheStats ald_get_cache_stats(void) {
 	return cache_get_stats(dri_cache);
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void ald_remove(void) {
+ cache_destroy(dri_cache); dri_cache=NULL;
+ for(int t=0; t<DRIFILETYPEMAX; t++) {
+  drifiles *d=dri[t]; if(!d) continue;
+  for(int i=0; i<DRIFILEMAX; i++) { if(d->mmap[i]) unmap_file(d->mmap[i]); free(d->fnames[i]); }
+  free(d->link); free(d->offset); free(d); dri[t]=NULL;
+ }
+}
+#endif

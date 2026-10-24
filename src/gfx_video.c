@@ -36,6 +36,7 @@
 #include "gfx_private.h"
 #include "xsystem35.h"
 #include "image.h"
+#include "event.h"
 
 static SDL_Window *gfx_window;
 SDL_Renderer *gfx_renderer;
@@ -59,6 +60,11 @@ int gfx_Initialize(const char *render_driver) {
 	makeDIB(SYS35_DEFAULT_WIDTH, SYS35_DEFAULT_HEIGHT, SYS35_DEFAULT_DEPTH);
 
 	gfx_setViewSize(SYS35_DEFAULT_WIDTH, SYS35_DEFAULT_HEIGHT);
+#ifdef XSYSTEM35_EMBEDDED
+	SDL_RenderClear(gfx_renderer);
+	SDL_RenderPresent(gfx_renderer);
+	xsystem35_host_present();
+#endif
 
 #ifdef __EMSCRIPTEN__
 	// Prevent SDL from calling emscripten_exit_fullscreen on visibilitychange
@@ -73,9 +79,20 @@ void gfx_Remove(void) {
 		SDL_DestroyPalette(gfx_palette);
 	if (main_surface)
 		SDL_DestroySurface(main_surface);
-	if (gfx_renderer)
-		SDL_DestroyRenderer(gfx_renderer);
+	if (gfx_texture) SDL_DestroyTexture(gfx_texture);
+	gfx_texture = NULL;
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_free_renderer();
+#else
+	if (gfx_renderer) SDL_DestroyRenderer(gfx_renderer);
 	SDL_Quit();
+#endif
+	gfx_palette = NULL;
+	main_surface = NULL;
+	gfx_renderer = NULL;
+	if (gfx_dibinfo) { free(gfx_dibinfo->alpha); free(gfx_dibinfo); }
+	gfx_dibinfo = NULL;
+	view_w = view_h = 0;
 }
 
 /* name is UTF-8 */
@@ -85,11 +102,21 @@ EM_JS(void, gfx_setWindowTitle, (char *name), {
 });
 #else
 void gfx_setWindowTitle(char *name) {
+#ifndef XSYSTEM35_EMBEDDED
 	SDL_SetWindowTitle(gfx_window, name);
+#else
+	(void)name;
+#endif
 }
 #endif
 
 static void window_init(const char *render_driver) {
+#ifdef XSYSTEM35_EMBEDDED
+	(void)render_driver;
+	gfx_renderer = xsystem35_host_renderer(SYS35_DEFAULT_WIDTH, SYS35_DEFAULT_HEIGHT);
+	gfx_palette = SDL_CreatePalette(256);
+	return;
+#endif
 	if (render_driver)
 		SDL_SetHint(SDL_HINT_RENDER_DRIVER, render_driver);
 	SDL_SetHint(SDL_HINT_TOUCH_MOUSE_EVENTS, "0");
@@ -196,6 +223,10 @@ static SDL_Point view_to_window_point(int x, int y) {
 }
 
 void gfx_warpMouse(int x, int y) {
+#ifdef XSYSTEM35_EMBEDDED
+	event_set_mouse_internal_location(x, y);
+	return;
+#endif
 	SDL_Point point = view_to_window_point(x, y);
 	SDL_WarpMouseInWindow(gfx_window, point.x, point.y);
 }
@@ -238,7 +269,7 @@ SDL_Surface *gfx_createSurfaceView(SDL_Surface *sf, int x, int y, int w, int h) 
 }
 
 void gfx_setFullscreen(bool on) {
-#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__)
+#if !defined(__EMSCRIPTEN__) && !defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 	if (on == gfx_fullscreen)
 		return;
 	sdl_SetWindowFullscreen(gfx_window, on);
@@ -260,8 +291,13 @@ void gfx_setViewSize(int w, int h) {
 	view_w = w;
 	view_h = h;
 
-#ifndef __ANDROID__
+#if !defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 	sdl_SetWindowContentSize(gfx_window, w, h);
+#endif
+#ifdef XSYSTEM35_EMBEDDED
+	if (gfx_texture) SDL_DestroyTexture(gfx_texture);
+	gfx_texture = NULL;
+	gfx_renderer = xsystem35_host_renderer(w, h);
 #endif
 	sdl_SetRenderLogicalPresentation(gfx_renderer, w, h, gfx_integer_scaling);
 	if (gfx_texture)

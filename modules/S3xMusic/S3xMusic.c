@@ -208,7 +208,7 @@ static void WaitEnd(void) {
 	TRACE_UNIMPLEMENTED("S3xMusic.WaitEnd %d, %d:", p1, p2);
 }
 
-static void sleep(void) {
+static void music_sleep(void) {
 	int p1 = getCaliValue();  // IWinMsg
 	TRACE_UNIMPLEMENTED("S3xMusic.sleep %d:", p1);
 }
@@ -232,7 +232,7 @@ static const ModuleFunc functions[] = {
 	{"StopFade", StopFade},
 	{"Unprepare", Unprepare},
 	{"WaitEnd", WaitEnd},
-	{"sleep", sleep},
+	{"sleep", music_sleep},
 };
 
 const Module module_S3xMusic = {"S3xMusic", functions, sizeof(functions) / sizeof(ModuleFunc)};

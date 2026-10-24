@@ -93,9 +93,11 @@ static bool cdrom_init(char *playlist_path) {
 }
 
 static void cdrom_exit(void) {
-	if (enabled) {
-		cdrom_stop();
-	}
+    if (enabled) cdrom_stop();
+    if (music) mixer_music_free(music);
+    music=NULL;
+    for (int i=0; i<PLAYLIST_MAX; i++) { free(playlist[i]); playlist[i]=NULL; }
+    enabled=false; trackno=0;
 }
 
 static void cdrom_reset(void) {
@@ -116,7 +118,7 @@ static bool cdrom_start(int trk, int loop) {
 		music = NULL;
 	}
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 	// mixer_music_load_file() opens the file with SDL_IOFromFile(), which
 	// requires an absolute path on Android.
 	char path[PATH_MAX];

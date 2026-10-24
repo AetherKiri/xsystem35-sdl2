@@ -24,6 +24,7 @@
 
 #include <stdio.h>
 #include <string.h>
+#include <stdlib.h>
 #ifdef __EMSCRIPTEN__
 #include <emscripten.h>
 #endif
@@ -79,6 +80,9 @@ struct volume_sav_channel {
 };
 
 void volume_init(void) {
+	for (int ch=0; ch<MAXVOLCH; ch++) { free(vval[ch].label); vval[ch].label=NULL; }
+	vval_max=0;
+	global_mute=false;
 	int i;
 	char fn[256];
 	int nvalancer = 0;

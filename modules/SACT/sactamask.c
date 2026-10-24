@@ -25,6 +25,7 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include "sdl_compat.h"
 
 #include "portab.h"
@@ -99,4 +100,10 @@ void sp_eupdate_amap(int index, int time, int cancel) {
 
 	SDL_DestroySurface(mask_sf);
 	cgdata_free(mask);
+}
+
+void smask_remove(void) {
+    if (am.mmap) unmap_file(am.mmap);
+    free(am.no); free(am.offset);
+    memset(&am,0,sizeof(am));
 }

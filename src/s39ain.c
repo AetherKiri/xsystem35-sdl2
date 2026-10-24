@@ -85,6 +85,7 @@ bool s39ain_init(const char *path_to_ain, S39AIN *ain) {
 		free(buf);
 		return false;
 	}
+	ain->backing = buf;
 	p += 8;
 	ain->dllnum = LittleEndian_getDW(p, 0);
 	ain->dll = calloc(ain->dllnum, sizeof(S39AIN_DLLINF));
@@ -175,3 +176,14 @@ void s39ain_reset(S39AIN *ain) {
 			ain->dll[i].reset();
 	}
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+void s39ain_remove(S39AIN *ain) {
+ for(int i=0; i<ain->dllnum; i++) {
+  for(int j=0; j<ain->dll[i].function_num; j++) free(ain->dll[i].function[j].argv);
+  free(ain->dll[i].function);
+ }
+ free(ain->dll); free(ain->fnc); free(ain->var); free(ain->msg); free(ain->backing);
+ memset(ain,0,sizeof(*ain));
+}
+#endif

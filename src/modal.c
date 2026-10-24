@@ -426,3 +426,13 @@ void modal_disabled_button(mu_Context *ctx, const char *label) {
 	mu_draw_text(ctx, font, label, -1, pos, DISABLED_GRAY);
 	mu_pop_clip_rect(ctx);
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+void modal_remove(void) {
+    current_modal=NULL;
+    free(ctx); ctx=NULL;
+    touch_phase=TOUCH_NONE;
+    touch_release_after_press=false;
+    xsystem35_host_text_input(0);
+}
+#endif

@@ -109,6 +109,7 @@ int mkdir_p(const char *path_utf8)
 /*   name : save/load directory      */
 void fc_init(const char *name) {
 	mkdir_p(name);
+	free(saveDataPath);
 	saveDataPath = strdup(name);
 }
 

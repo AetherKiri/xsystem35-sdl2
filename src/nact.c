@@ -117,6 +117,9 @@ void nact_main() {
 			dbg_main(0);
 		}
 
+		#ifdef XSYSTEM35_EMBEDDED
+		if ((scheduler_cmd_count & 1023) == 0) xsystem35_host_checkpoint();
+		#endif
 		exec_command();
 		scheduler_on_command();
 
@@ -147,7 +150,10 @@ void nact_init() {
 	nact->is_va_animation = false;
 	nact->is_cursor_animation = false;
 	nact->encoding = SHIFT_JIS;
-	v_set_encoding(SHIFT_JIS);
+#ifdef XSYSTEM35_EMBEDDED
+	if (xsystem35_host_gbk()) nact->encoding = GBK;
+#endif
+	v_set_encoding(nact->encoding);
 
 	free(nact->game_title_utf8);
 	nact->game_title_utf8 = NULL;

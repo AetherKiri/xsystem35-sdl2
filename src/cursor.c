@@ -162,6 +162,9 @@ static SDL_Cursor *init_system_cursor(const char *image[]) {
 }
 
 void cursor_init(void) {
+#ifdef XSYSTEM35_EMBEDDED
+	return;
+#endif
 	cursor[CURSOR_ARROW]    = SDL_GetDefaultCursor();
 	cursor[CURSOR_CROSS]    = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_CROSSHAIR);
 	cursor[CURSOR_IBEAM]    = SDL_CreateSystemCursor(SDL_SYSTEM_CURSOR_TEXT);

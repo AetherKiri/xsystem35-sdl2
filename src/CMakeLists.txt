@@ -73,6 +73,7 @@ target_sources(xsystem35 PRIVATE
   cursor.c
   ecopy.c
   effect.c
+  render_mosaic.c
   event.c
   hacks.c
   gfx_draw.c
@@ -148,7 +149,7 @@ if (NOT HAVE_LIBINTL)
   target_sources(xsystem35 PRIVATE nls.c)
 endif()
 
-target_link_libraries(src_lib PRIVATE sdl freetype2 zlib)
+target_link_libraries(src_lib PRIVATE sdl freetype2 zlib Iconv::Iconv)
 target_link_libraries(xsystem35 PRIVATE m zlib sdl)
 if (TARGET sdl_mixer)
   target_link_libraries(xsystem35 PRIVATE sdl_mixer)

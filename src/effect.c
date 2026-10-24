@@ -27,6 +27,7 @@
 #include "system.h"
 #include "gfx.h"
 #include "effect.h"
+#include "render_mosaic.h"
 #include "gfx_private.h"
 
 #define M_PIf ((float)M_PI)
@@ -186,8 +187,11 @@ struct effect {
 };
 
 static void effect_redraw(void *arg);
+static struct effect *active_effect;
+static bool abandoning_effect;
 
 static void eff_init(struct effect *eff, SDL_Rect *rect, EffectTexture *old, EffectTexture *new, enum effect_type type) {
+	active_effect = eff;
 	eff->type = type;
 	eff->dst_rect = *rect;
 	eff->is_fullscreen = rect->x == 0 && rect->y == 0
@@ -207,11 +211,12 @@ static void draw_final_frame(struct effect *eff, float progress) {
 // If present is true, tx_new is displayed as the final frame. Otherwise the
 // frame at progress 1.0 is left on the screen.
 static void eff_finish(struct effect *eff, bool present) {
-	if (present) {
+	if (present && !abandoning_effect) {
 		eff->draw = draw_final_frame;
 		gfx_requestRedraw();
 	}
-	gfx_updateScreen();  // Make sure the last frame is displayed.
+	if (!abandoning_effect) gfx_updateScreen();  // Make sure the last frame is displayed.
+	active_effect = NULL;
 	gfx_setRedrawHandler(NULL, NULL);
 	destroy_effect_texture(eff->tx_old);
 	destroy_effect_texture(eff->tx_new);
@@ -409,28 +414,8 @@ static struct effect *mosaic_new(SDL_Rect *rect, EffectTexture *old, EffectTextu
 }
 
 static void mosaic(EffectTexture *src, SDL_Texture *tmp, SDL_Texture *dst, int w, int h, float scale) {
-	int cx = w / 2;
-	int cy = h / 2;
-	SDL_FRect fr = {
-		.x = cx - cx / scale,
-		.y = cy - cy / scale,
-		.w = w / scale,
-		.h = h / scale,
-	};
-	SDL_SetRenderTarget(gfx_renderer, tmp);
-	sdl_RenderTextureF(gfx_renderer, src->tx, &src->rect, &fr);
-
-	SDL_Rect dstr = {
-		.x = w * (1 - scale) / 2,
-		.y = h * (1 - scale) / 2,
-		.w = w * scale,
-		.h = h * scale,
-	};
-	SDL_SetRenderTarget(gfx_renderer, dst);
-
-	SDL_SetTextureScaleMode(tmp, SDL_SCALEMODE_NEAREST);
-	sdl_RenderTexture(gfx_renderer, tmp, NULL, &dstr);
-	SDL_SetRenderTarget(gfx_renderer, NULL);
+	if (!render_mosaic(gfx_renderer, src->tx, &src->rect, tmp, dst, w, h, scale))
+        SYSERROR("Cannot render mosaic transition: %s", SDL_GetError());
 }
 
 static void mosaic_draw(struct effect *eff, float progress) {
@@ -1906,3 +1891,13 @@ void effect_step(struct effect *eff, float progress) {
 void effect_finish(struct effect *eff) {
 	eff->finish(eff);
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+void effect_remove(void) {
+    if (!active_effect) return;
+    abandoning_effect=true;
+    active_effect->finish(active_effect);
+    active_effect=NULL;
+    abandoning_effect=false;
+}
+#endif

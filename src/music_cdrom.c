@@ -38,9 +38,10 @@ extern cdromdevice_t cdrom_mp3;
 #define NATIVE_CD_DEVICE &cdrom_mp3
 #endif
 
-static char *playlist = DEFAULT_PLAYLIST_PATH;
+static char *playlist;
 
 void muscd_set_playlist(const char *name) {
+	free(playlist);
 	playlist = strdup(name);
 }
 
@@ -52,7 +53,7 @@ bool muscd_init(void) {
 		prv.cddev = NATIVE_CD_DEVICE;
 	}
 	prv.cd_current_track = 0;
-	return prv.cddev->init(playlist);
+	return prv.cddev->init(playlist ? playlist : DEFAULT_PLAYLIST_PATH);
 }
 
 bool muscd_init_bgm(DRIFILETYPE type, int base_no) {
@@ -62,6 +63,7 @@ bool muscd_init_bgm(DRIFILETYPE type, int base_no) {
 }
 
 void muscd_exit(void) {
+	free(playlist); playlist=NULL;
 	if (prv.cddev) {
 		prv.cddev->exit();
 		prv.cddev = NULL;

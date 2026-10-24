@@ -1,5 +1,11 @@
 # xsytem35-sdl2
 
+This `aether` branch adds the native host interface in `src/embedded.h`,
+contained VM exits and session teardown, game-relative I/O, GBK text support
+and software-renderer mosaic fixes for [Aether](https://github.com/AetherKiri/Aether).
+The `master` branch remains reserved for upstream synchronization.
+
+
 This is a multi-platform port of `xsystem35`, a free implementation of
 AliceSoft's System 3.x game engine.
 

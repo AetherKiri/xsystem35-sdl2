@@ -758,3 +758,11 @@ void sl_returnGoto(int address) {
 		sl_jmpNear(address);
 	}
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void sl_remove(void) {
+ ald_freedata(dfile); dfile=NULL; ald_freedata(datatbl); datatbl=NULL;
+ free(stack_buf); stack_buf=stack_top=NULL; stack_size=1024; sl_sco=NULL; sl_page=sl_index=0;
+}
+#endif

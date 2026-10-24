@@ -239,7 +239,12 @@ static bool joy_init(void) {
 void event_init(void) {
 	if (custom_event_type == (uint32_t)-1)
 		custom_event_type = SDL_RegisterEvents(1);
+#ifndef XSYSTEM35_EMBEDDED
 	joy_init();
+#endif
+	event_reset_input_state();
+	mouse_pos = (SDL_Point){0, 0};
+	mouse_wheel_up = mouse_wheel_down = 0;
 }
 
 void event_remove(void) {
@@ -436,6 +441,9 @@ void event_handle_event(SDL_Event *e) {
 		}
 
 	case SDL_EVENT_MOUSE_BUTTON_DOWN:
+#ifdef XSYSTEM35_EMBEDDED
+		event_set_mouse_internal_location(e->button.x, e->button.y);
+#endif
 		mouseb |= (1 << e->button.button);
 		RawKeyInfo[mouse_to_rawkey(e->button.button)] = true;
 		send_agsevent(AGSEVENT_BUTTON_PRESS, mouse_to_agsevent(e->button.button));
@@ -582,7 +590,13 @@ static void get_event(void) {
 	fire_deferred_touch_event();
 
 	SDL_Event e;
-	while (SDL_PollEvent(&e)) {
+	while (
+#ifdef XSYSTEM35_EMBEDDED
+		xsystem35_host_poll_event(&e)
+#else
+		SDL_PollEvent(&e)
+#endif
+	) {
 		scheduler_event = SCHEDULER_EVENT_INPUT_CHECK_HIT;
 		event_handle_event(&e);
 	}

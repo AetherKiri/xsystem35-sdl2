@@ -126,6 +126,9 @@ bool ags_check_param_xy(int *x, int *y) {
 }
 
 void ags_init(const char *render_driver) {
+	need_update = true;
+	fade_outed = false;
+	cursor_move_time = 50;
 	nact->ags.mouse_warp_enabled = true;
 	nact->ags.world_width  =  SYS35_DEFAULT_WIDTH;
 	nact->ags.world_height =  SYS35_DEFAULT_HEIGHT;

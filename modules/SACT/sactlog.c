@@ -136,6 +136,7 @@ void sblog_end(void) {
 	ags_updateFull();
 	
 	SDL_DestroySurface(back);
+	back = NULL;
 
 	// Remove instruction text
 	for (i = 0; i < LOGMSG_LINES; i++) {
@@ -161,4 +162,14 @@ void sblog_pagepre(void) {
 void sblog_pagenext(void) {
 	curline = min(list_length(sact.log), curline + 1);
 	draw_log();
+}
+
+void sblog_remove(void) {
+    for (List *node=sact.log; node; node=node->next) {
+        bool owned=true;
+        for (int i=0; i<LOGMSG_LINES; i++) if (node->data==logmsg[i]) owned=false;
+        if (owned) free(node->data);
+    }
+    slist_free(sact.log); sact.log=NULL;
+    if (back) SDL_DestroySurface(back); back=NULL;
 }

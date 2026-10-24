@@ -162,6 +162,8 @@ static void message(int c0) {
 	while (c0 == 0x20 || c0 >= 0x80) {
 		if (nact->encoding == UTF8) {
 			*p++ = (char)c0;
+		} else if (nact->encoding == GBK && c0 >= 0x81 && c0 <= 0xfe) {
+			*p++ = (char)c0; *p++ = (char)sl_getc();
 		} else if (c0 == 0x20) {
 			*p++ = (char)c0;
 		} else if (c0 >= 0xe0) {
@@ -170,6 +172,9 @@ static void message(int c0) {
 			*p++ = (char)c0;
 		} else {
 			*p++ = (char)c0; *p++ = (char)sl_getc();
+		}
+		if (p - buf >= sizeof(buf) - 4) {
+			*p = 0; sys_addMsg(buf); p = buf;
 		}
 		c0 = sl_getc();
 	}

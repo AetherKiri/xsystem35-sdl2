@@ -57,7 +57,7 @@ static void storeSaveName(GameResource *gr, int no, char *src) {
 			*b = '\0';
 			gr->save_path = strdup(src);
 		} else {
-			gr->save_path = ".";
+			gr->save_path = strdup(".");
 		}
 	}
 	if (path) free(path);
@@ -250,3 +250,15 @@ bool initGameResource(GameResource *gr, const char *gr_fname, const char *savedi
 	SYSERROR("Game Resource File open failed");
 	return false;
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void game_resource_remove(GameResource *gr) {
+ for(int t=0; t<DRIFILETYPEMAX; t++) for(int i=0; i<DRIFILEMAX; i++) free((void *)gr->game_fname[t][i]);
+ for(int i=0; i<SAVE_MAXNUMBER; i++) free((void *)gr->save_fname[i]);
+ free((void *)gr->gr_fname); free((void *)gr->save_path); free((void *)gr->ain); free((void *)gr->wai); free((void *)gr->bgi);
+ free((void *)gr->sact01); free((void *)gr->init); free((void *)gr->msgskip);
+ for(int i=0; i<10; i++) free((void *)gr->alk[i]);
+ memset(gr,0,sizeof(*gr));
+}
+#endif

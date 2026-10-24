@@ -75,6 +75,9 @@ void gfx_updateScreen(void) {
 		sdl_RenderTexture(gfx_renderer, gfx_texture, NULL, NULL);
 	modal_render_overlay();
 	SDL_RenderPresent(gfx_renderer);
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_present();
+#endif
 	gfx_dirty = false;
 }
 
@@ -380,3 +383,8 @@ void gfx_wrapColor(int sx, int sy, int w, int h, uint8_t c, int rate) {
 	SDL_BlitSurface(s, &r_src, main_surface, &r_dst);
 	SDL_DestroySurface(s);
 }
+
+#ifdef XSYSTEM35_EMBEDDED
+
+void gfx_draw_reset(void) { gfx_dirty=false; redraw_handler=NULL; redraw_handler_arg=NULL; }
+#endif

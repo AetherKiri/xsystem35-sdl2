@@ -28,16 +28,41 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <errno.h>
+#include <iconv.h>
 
 #include "portab.h"
 #include "utfsjis.h"
 #include "s2utbl.h"
+
+
+static char *convert_gbk(CharacterEncoding to, CharacterEncoding from, const char *text) {
+    static const char *names[] = {"CP932", "UTF-8", "GBK"};
+    iconv_t cd = iconv_open(names[to], names[from]);
+    if (cd == (iconv_t)-1) return strdup("");
+    size_t left = strlen(text), capacity = left * 4 + 16;
+    char *result = malloc(capacity), *out = result, *in = (char *)text;
+    if (!result) { iconv_close(cd); return NULL; }
+    size_t room = capacity - 1;
+    while (left) {
+        if (iconv(cd, &in, &left, &out, &room) != (size_t)-1) break;
+        if (errno == E2BIG) break;
+        // Keep malformed/truncated bytes from being interpreted as opcodes.
+        *out++ = '?'; room--; in++; left--;
+        iconv(cd, NULL, NULL, NULL, NULL);
+    }
+    *out = 0;
+    iconv_close(cd);
+    return result;
+}
 
 char* codeconv(CharacterEncoding tocode,
 			   CharacterEncoding fromcode,
 			   const char *str) {
 	if (tocode == fromcode)
 		return strdup(str);
+	if (tocode == GBK || fromcode == GBK)
+		return convert_gbk(tocode, fromcode, str);
 	if (tocode == UTF8 && fromcode == SHIFT_JIS)
 		return (char *)sjis2utf((char *)str);
 	if (tocode == SHIFT_JIS && fromcode == UTF8)
@@ -190,6 +215,8 @@ int utf8_next_codepoint(const char **msg) {
 
 char *advance_char(const char *s, CharacterEncoding e) {
 	switch (e) {
+	case GBK:
+		return (char *)s + (((unsigned char)*s >= 0x81 && (unsigned char)*s <= 0xfe && s[1]) ? 2 : 1);
 	case SHIFT_JIS:
 		return (char *)s + ((CHECKSJIS1BYTE(*s) && *(s + 1)) ? 2 : 1);
 	case UTF8:

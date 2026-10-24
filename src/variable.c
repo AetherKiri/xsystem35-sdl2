@@ -357,7 +357,7 @@ int svar_toVars(int no, vmvar_t *vars) {
 	int count = 0;
 	for (const char *p = strVar[no]; *p; p++, count++) {
 		vars[count] = *p & 0xff;
-		if (CHECKSJIS1BYTE(*p) && *(p + 1))
+		if ((encoding == GBK ? (unsigned char)*p >= 0x81 && (unsigned char)*p <= 0xfe : CHECKSJIS1BYTE(*p)) && *(p + 1))
 			vars[count] |= (*++p & 0xff) << 8;
 	}
 	vars[count++] = 0;
@@ -367,10 +367,10 @@ int svar_toVars(int no, vmvar_t *vars) {
 int svar_getCharType(int no, int pos) {
 	const char *p = svar_get(no);
 	for (; *p && pos > 0; pos--)
-		p += CHECKSJIS1BYTE(*p) ? 2 : 1;
+		p = advance_char(p, encoding);
 	if (!*p)
 		return 0;
-	return CHECKSJIS1BYTE(*p) ? 2 : 1;
+	return advance_char(p, encoding) - p;
 }
 
 void svar_replaceAll(int no, int pattern, int replacement) {

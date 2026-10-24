@@ -30,7 +30,7 @@
 #include <locale.h>
 #include <unistd.h>
 
-#ifdef HAVE_SIGACTION
+#if defined(HAVE_SIGACTION) && !defined(XSYSTEM35_EMBEDDED)
 #include <signal.h>
 #endif
 
@@ -68,6 +68,14 @@
 #include "msgskip.h"
 #include "texthook.h"
 
+static void xsystem35_exit_process(int code) {
+#ifdef XSYSTEM35_EMBEDDED
+    xsystem35_host_exit(code);
+#else
+    exit(code);
+#endif
+}
+
 static char *gameResourceFile = "xsystem35.gr";
 static void    sys35_usage(bool verbose);
 static void    sys35_init();
@@ -93,6 +101,9 @@ static bool font_noantialias;
 static bool integer_scaling = false;
 /* fullscreen on from command line */
 static bool fs_on;
+#ifdef XSYSTEM35_EMBEDDED
+static bool host_audio_initialized, host_graphics_initialized;
+#endif
 
 static void sys35_usage(bool verbose) {
 	if (verbose) {
@@ -143,7 +154,7 @@ static void sys35_usage(bool verbose) {
 	puts(" -version                : show version");
 	puts(" -h                      : show this message");
 	puts(" --help                  : show this message");
-	exit(1);
+	xsystem35_exit_process(1);
 }
 
 static void sys35_init() {
@@ -155,6 +166,9 @@ static void sys35_init() {
 
 	v_init();
 	
+	#ifdef XSYSTEM35_EMBEDDED
+	host_graphics_initialized = true;
+	#endif
 	ags_init(render_driver);
 
 	for (i = 0; i < FONTTYPEMAX; i++)
@@ -173,8 +187,14 @@ static void sys35_init() {
 
 void sys35_remove(void) {
 	dbg_quit();
+#ifdef XSYSTEM35_EMBEDDED
+	if (host_audio_initialized) mus_exit();
+	if (host_graphics_initialized) ags_remove();
+	host_audio_initialized = host_graphics_initialized = false;
+#else
 	mus_exit();
 	ags_remove();
+#endif
 }
 
 static void sys_reset(void) {
@@ -282,7 +302,7 @@ static void sys35_ParseOption(int *argc, char **argv) {
 			}
 		} else if (0 == strcmp(argv[i], "-version")) {
 			puts(VERSION);
-			exit(0);
+			xsystem35_exit_process(0);
 		} else if (0 == strcmp(argv[i], "-integerscale")) {
 			integer_scaling = true;
 		} else if (0 == strcmp(argv[i], "-mute_on_unfocus")) {
@@ -408,16 +428,16 @@ static void check_profile() {
 	}
 }
 
-#ifdef HAVE_SIGACTION
+#if defined(HAVE_SIGACTION) && !defined(XSYSTEM35_EMBEDDED)
 static void signal_handler(int sig_num) {
 	sys35_remove();
-	exit(1);
+	xsystem35_exit_process(1);
 }
 
 static void signal_handler_segv(int sig_num) {
 	fprintf(stderr, "PID(%d), sigsegv caught @ %03d, %05x\n", (int)getpid(), sl_getPage(), sl_getIndex());
 	sys35_remove();
-	exit(1);
+	xsystem35_exit_process(1);
 }
 
 void sys_set_signalhandler(int SIG, void (*handler)(int)) {
@@ -458,12 +478,16 @@ static void registerGameFiles(void) {
 		fc_init(nact->files.save_path);
 }
 
+#ifdef XSYSTEM35_EMBEDDED
+int xsystem35_main(int argc, char **argv) {
+#else
 int main(int argc, char **argv) {
-#ifdef HAVE_SIGACTION
+#endif
+#if defined(HAVE_SIGACTION) && !defined(XSYSTEM35_EMBEDDED)
 	sys_set_signalhandler(SIGINT, SIG_IGN);
 #endif
 	
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 	// Handle -gamedir option here so that .xsys35rc is loaded from that directory.
 	if (strcmp(argv[1], "-gamedir") == 0)
 		chdir(argv[2]);
@@ -476,17 +500,20 @@ int main(int argc, char **argv) {
 	if (!initGameResource(&nact->files, gameResourceFile, savedir)) {
 #ifdef _WIN32
 		sys_show_message_box(MESSAGEBOX_ERROR, "xsystem35", "Cannot find scenario file (*SA.ALD)");
-		exit(1);
+		xsystem35_exit_process(1);
 #else
 		sys35_usage(true);
 #endif
 	}
 	registerGameFiles();
 	
-#ifdef HAVE_SIGACTION
+#if defined(HAVE_SIGACTION) && !defined(XSYSTEM35_EMBEDDED)
 	init_signalhandler();
 #endif
 
+	#ifdef XSYSTEM35_EMBEDDED
+	host_audio_initialized = true;
+	#endif
 	mus_init(audio_buffer_size);
 
 #ifdef HAVE_LIBINTL
@@ -526,7 +553,9 @@ int main(int argc, char **argv) {
 		sys_reset();
 	}
 
+#ifndef XSYSTEM35_EMBEDDED
 	sys35_remove();
+#endif
 	
 	return 0;
 }
@@ -538,4 +567,55 @@ void sys_restart(void) {
 	nact_quit(true);
 }
 
+#endif
+
+#ifdef XSYSTEM35_EMBEDDED
+extern void profile_clear(void);
+extern void modal_remove(void);
+extern void effect_remove(void);
+extern void ald_remove(void);
+extern void sl_remove(void);
+extern void font_remove(void);
+extern void cg_remove(void);
+extern void s39ain_remove(S39AIN *ain);
+extern void msgskip_remove(void);
+extern void gfx_draw_reset(void);
+extern void game_resource_remove(GameResource *gr);
+
+void xsystem35_session_reset(void) {
+    gameResourceFile = "xsystem35.gr";
+    render_driver = NULL;
+    savedir = NULL;
+    audio_buffer_size = 1024;
+    font_noantialias = integer_scaling = fs_on = false;
+    debugger_mode = DEBUGGER_DISABLED;
+    memset(fontface, 0, sizeof(fontface));
+    fontname_tt[0] = DEFAULT_GOTHIC_TTF;
+    fontname_tt[1] = DEFAULT_MINCHO_TTF;
+    game_id = GAME_UNKNOWN;
+    daiakuji_cx_hack = false;
+    cmdz_reset();
+    cmd2F_reset();
+    event_reset_input_state();
+    gfx_draw_reset();
+    v_reset();
+}
+
+void xsystem35_session_cleanup(void) {
+    effect_remove();
+    modal_remove();
+    s39ain_reset(&nact->ain);
+    va_reset();
+    sys35_remove();
+    msgskip_remove();
+    sl_remove();
+    cg_remove();
+    font_remove();
+    s39ain_remove(&nact->ain);
+    ald_remove();
+    game_resource_remove(&nact->files);
+    memset(&nact->ags, 0, sizeof(nact->ags));
+    profile_clear();
+    gfx_draw_reset();
+}
 #endif

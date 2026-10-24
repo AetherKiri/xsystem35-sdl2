@@ -80,13 +80,21 @@ void sys_error(char *format, ...) {
 	va_end(args);
 	sys_show_message_box(MESSAGEBOX_ERROR, "xsystem35", buf);
 
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_exit(1);
+#else
 	sys35_remove();
 	exit(1);
+#endif
 }
 
 void sys_exit(int code) {
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_exit(code);
+#else
 	sys35_remove();
 	exit(code);
+#endif
 }
 
 uint32_t sys_get_ticks(void) {
@@ -94,6 +102,9 @@ uint32_t sys_get_ticks(void) {
 }
 
 void sys_sleep(int msec) {
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_checkpoint();
+#endif
 	gfx_updateScreen();
 	dbg_onsleep();
 #ifdef __EMSCRIPTEN__
@@ -116,6 +127,9 @@ EM_JS(void, wait_vsync, (void), {
 #endif
 
 void sys_wait_vsync(void) {
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_checkpoint();
+#endif
 	gfx_updateScreen();
 	dbg_onsleep();
 #ifdef __EMSCRIPTEN__
@@ -133,5 +147,9 @@ void sys_show_message_box(enum messagebox_type type, const char* title_utf8, con
 	case MESSAGEBOX_WARNING: flags = SDL_MESSAGEBOX_WARNING; break;
 	case MESSAGEBOX_INFO: flags = SDL_MESSAGEBOX_INFORMATION; break;
 	}
+#ifdef XSYSTEM35_EMBEDDED
+	xsystem35_host_log(type == MESSAGEBOX_ERROR ? 0 : 2, message_utf8);
+#else
 	SDL_ShowSimpleMessageBox(flags, title_utf8, message_utf8, gfx_getWindow());
+#endif
 }
