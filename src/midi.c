@@ -40,7 +40,7 @@ static int subdev = -1;
 extern mididevice_t midi_emscripten;
 #endif
 
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 extern mididevice_t midi_android;
 #endif
 
@@ -61,7 +61,7 @@ bool midi_init(mididevice_t *midi) {
 		ret = midi_emscripten.init(0);
 		memcpy(midi, &midi_emscripten, sizeof(mididevice_t));
 #endif
-#ifdef __ANDROID__
+#if defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 		ret = midi_android.init(0);
 		memcpy(midi, &midi_android, sizeof(mididevice_t));
 #endif
