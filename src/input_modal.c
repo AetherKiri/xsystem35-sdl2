@@ -28,7 +28,9 @@
 #include "portab.h"
 #include "input_modal.h"
 
-#if defined(__ANDROID__)
+// Embedded hosts own the platform activity and forward input to the portable
+// modal UI; SDL's standalone Android activity is unavailable in that mode.
+#if defined(__ANDROID__) && !defined(XSYSTEM35_EMBEDDED)
 
 #include "sdl_compat.h"
 #include <jni.h>
